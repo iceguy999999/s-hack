@@ -572,21 +572,51 @@
                     if (iframe && iframe.src) {
                         const spotifyUrl = iframe.src; // Get the URL from the iframe's source
 
-                        // 1. Copy URL to clipboard
-                        navigator.clipboard.writeText(spotifyUrl).then(() => {
-                            o.innerHTML = '<p class="message-success">URL copied to clipboard!</p>';
-                        }).catch(err => {
-                            console.error('Failed to copy URL:', err); // Log error for debugging
-                            o.innerHTML = '<p class="message-error">Failed to copy URL to clipboard.</p>';
-                        });
+                        // Check if the .exe has been downloaded on this device before
+                        const exeDownloaded = localStorage.getItem('spotidownloader_exe_downloaded');
+                        const downloadUrl = 'https://drive.usercontent.google.com/u/0/uc?id=1gpvTlkKpPL88bY2wZf_r9te3h4ctpvEf&export=download'; // Google Drive download URL
 
-                        // 2. Open the SpotiDownloader application via custom protocol
-                        // Add a small delay to allow clipboard operation to initiate before redirect
-                        setTimeout(() => {
-                            window.location.href = 'spotidownloader://' + spotifyUrl;
-                        }, 100); // 100ms delay
+                        if (exeDownloaded !== 'true') {
+                            // Open the .exe download URL in a new tab
+                            window.open(downloadUrl, '_blank');
+
+                            localStorage.setItem('spotidownloader_exe_downloaded', 'true'); // Set the flag in localStorage
+                            displayMessage('success', 'Opening SpotiDownloaderV1.exe download in a new tab... Please check the new tab to complete the download.');
+                            
+                            // Give a small delay to allow the new tab to open before proceeding with app launch.
+                            setTimeout(() => {
+                                // Copy URL to clipboard
+                                navigator.clipboard.writeText(spotifyUrl).then(() => {
+                                    displayMessage('success', 'URL copied to clipboard! Opening SpotiDownloader...');
+                                }).catch(err => {
+                                    console.error('Failed to copy URL:', err); // Log error for debugging
+                                    displayMessage('error', 'Failed to copy URL to clipboard. Still attempting to open SpotiDownloader.');
+                                });
+
+                                // Open the SpotiDownloader application via custom protocol
+                                // Add a small delay to allow clipboard operation to initiate before redirect
+                                setTimeout(() => {
+                                    window.location.href = 'spotidownloader://' + spotifyUrl;
+                                }, 100); // 100ms delay
+                            }, 1500); // Wait 1.5 seconds before proceeding with app launch
+                        } else {
+                            // Already downloaded, just proceed with clipboard copy and app launch
+                            // Copy URL to clipboard
+                            navigator.clipboard.writeText(spotifyUrl).then(() => {
+                                displayMessage('success', 'URL copied to clipboard! Opening SpotiDownloader...');
+                            }).catch(err => {
+                                console.error('Failed to copy URL:', err);
+                                displayMessage('error', 'Failed to copy URL to clipboard. Still attempting to open SpotiDownloader.');
+                            });
+
+                            // Open the SpotiDownloader application via custom protocol
+                            // Add a small delay to allow clipboard operation to initiate before redirect
+                            setTimeout(() => {
+                                window.location.href = 'spotidownloader://' + spotifyUrl;
+                            }, 100); // 100ms delay
+                        }
                     } else {
-                        o.innerHTML = '<p class="message-warning">No URL found for this player.</p>';
+                        displayMessage('warning', 'No URL found for this player.');
                     }
                 }
             });
